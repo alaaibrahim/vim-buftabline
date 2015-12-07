@@ -37,11 +37,12 @@ hi default link BufTabLineModifiedCurrent BufTabLineCurrent
 hi default link BufTabLineModifiedActive  BufTabLineActive
 hi default link BufTabLineModifiedHidden  BufTabLineHidden
 
-let g:buftabline_numbers    = get(g:, 'buftabline_numbers',    0)
-let g:buftabline_indicators = get(g:, 'buftabline_indicators', 0)
-let g:buftabline_separators = get(g:, 'buftabline_separators', 0)
-let g:buftabline_show       = get(g:, 'buftabline_show',       2)
-let g:buftabline_plug_max   = get(g:, 'buftabline_plug_max',  10)
+let g:buftabline_numbers        = get(g:, 'buftabline_numbers',         0)
+let g:buftabline_indicators     = get(g:, 'buftabline_indicators',      0)
+let g:buftabline_separators     = get(g:, 'buftabline_separators',      0)
+let g:buftabline_show           = get(g:, 'buftabline_show',            2)
+let g:buftabline_plug_max       = get(g:, 'buftabline_plug_max',  10)
+let g:buftabline_unnamedbufname = get(g:, 'buftabline_unnamedbufname', '')
 
 function! buftabline#user_buffers() " help buffers are always unlisted, but quickfix buffers are not
 	return filter(range(1,bufnr('$')),'buflisted(v:val) && "quickfix" !=? getbufvar(v:val, "&buftype")')
@@ -60,10 +61,11 @@ let s:centerbuf = winbufnr(0)
 let s:tablineat = has('tablineat')
 let s:sid = s:SID() | delfunction s:SID
 function! buftabline#render()
-	let show_num = g:buftabline_numbers == 1
-	let show_ord = g:buftabline_numbers == 2
-	let show_mod = g:buftabline_indicators
-	let lpad     = g:buftabline_separators ? nr2char(0x23B8) : ' '
+	let show_num        =  g:buftabline_numbers == 1
+	let show_ord        =  g:buftabline_numbers == 2
+	let show_mod        =  g:buftabline_indicators
+	let lpad            =  g:buftabline_separators ? nr2char(0x23B8) : ' '
+	let unnamedbufname  =  g:buftabline_unnamedbufname
 
 	let bufnums = buftabline#user_buffers()
 	let centerbuf = s:centerbuf " prevent tabline jumping around when non-user buffer current (e.g. help)
@@ -95,8 +97,13 @@ function! buftabline#render()
 		elseif -1 < index(['nofile','acwrite'], getbufvar(bufnum, '&buftype')) " scratch buffer
 			let tab.label = ( show_mod ? '!' . screen_num : screen_num ? screen_num . ' !' : '!' )
 		else " unnamed file
-			let tab.label = ( show_mod && getbufvar(bufnum, '&mod') ? '+' : '' )
-			\             . ( screen_num ? screen_num : '*' )
+			if screen_num
+				let tab.label = ( show_mod && getbufvar(bufnum, '&mod') ? '+' : '' )
+				\             . screen_num . (strlen(unnamedbufname) ? ' ' . unnamedbufname : '')
+			else
+				let tab.label = ( show_mod && getbufvar(bufnum, '&mod') ? '+' : '' )
+				\             . (strlen(unnamedbufname) ? unnamedbufname : '*')
+			endif
 		endif
 		let tabs += [tab]
 	endfor
